@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Card Picker</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#ffffff; --text:#111; --card-radius:12px;
+  --accent-amex: #097dc8; --accent-citi: #d4af37; --accent-citizens: #228b22; --accent-schwab: #787878;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;}
+header{padding:18px 16px; text-align:center; font-weight:600; font-size:18px; border-bottom:1px solid #eee}
+.container{padding:14px;}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.03);}
+.card-icon{font-size:30px;margin-bottom:8px}
+.result-view{display:none;padding:16px;margin:12px;border-radius:12px;background:#fff;border:1px solid #eee;box-shadow:0 4px 16px rgba(0,0,0,0.04)}
+.top-bar{height:6px;border-radius:6px 6px 0 0;margin:-16px -16px 12px -16px}
+.result-title{font-weight:700;font-size:16px;margin-bottom:6px}
+.result-sub{color:#444}
+.btn{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:10px;background:#007aff;color:#fff;border:none;font-weight:600}
+.small{font-size:13px;color:#666;margin-top:8px}
+.footer{padding:18px;text-align:center;color:#888;font-size:13px}
+</style>
+</head>
+<body>
+<header>Card Picker</header>
+<div class="container">
+  <div id="categoryView" class="grid" aria-hidden="false">
+    <div class="card" data-key="groceries"><div class="card-icon">🛒</div><div>Groceries</div></div>
+    <div class="card" data-key="dining"><div class="card-icon">🍽</div><div>Dining</div></div>
+    <div class="card" data-key="travel"><div class="card-icon">✈️</div><div>Travel</div></div>
+    <div class="card" data-key="gas"><div class="card-icon">⛽️</div><div>Gas / Transit</div></div>
+    <div class="card" data-key="online"><div class="card-icon">💻</div><div>Online Shopping</div></div>
+    <div class="card" data-key="streaming"><div class="card-icon">🎬</div><div>Streaming</div></div>
+    <div class="card" data-key="general"><div class="card-icon">💳</div><div>General</div></div>
+    <div class="card" data-key="other"><div class="card-icon">⭐</div><div>All Cards</div></div>
+  </div>
+
+  <div id="resultView" class="result-view" aria-hidden="true">
+    <div id="topBar" class="top-bar" style="background:var(--accent-amex)"></div>
+    <div class="result-title" id="resultCard">Amex Blue Cash Preferred</div>
+    <div class="result-sub" id="resultText">6% back on U.S. supermarkets</div>
+    <div class="small">Tap a category to see best card. Add to Home Screen: Share → Add to Home Screen (Safari).</div>
+    <div style="text-align:center"><button id="backBtn" class="btn">Back</button></div>
+  </div>
+
+  <div id="allCards" style="display:none;margin-top:12px"></div>
+</div>
+<div class="footer">Minimalist, offline-capable. Icons and colors match issuers.</div>
+
+<script>
+const cards = {
+  "Amex Blue Cash Preferred": { issuer:'amex', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-amex'), text:'6% back on U.S. supermarkets' },
+  "Amex Blue Cash Everyday": { issuer:'amex', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-amex'), text:'3% back on groceries, gas, online retail' },
+  "Citizens Reserve Summit": { issuer:'citizens', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-citizens'), text:'~3% back on dining & travel' },
+  "Citi Strata Premiere": { issuer:'citi', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-citi'), text:'3x points on travel, gas, dining, supermarkets' },
+  "PayPal Debit Card": { issuer:'paypal', color:'#6a0dad', text:'1% cashback via PayPal balance' },
+  "RBC Bank U.S. Visa": { issuer:'rbc', color:'#c81216', text:'1–2% general cashback' },
+  "Charles Schwab Debit Card": { issuer:'schwab', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-schwab'), text:'No foreign transaction fees (debit)' }
+};
+
+const bestCardMap = {
+  groceries: {card:'Amex Blue Cash Preferred', issuer:'amex'},
+  dining: {card:'Citizens Reserve Summit', issuer:'citizens'},
+  travel: {card:'Citi Strata Premiere', issuer:'citi'},
+  gas: {card:'Amex Blue Cash Everyday', issuer:'amex'},
+  online: {card:'Amex Blue Cash Everyday', issuer:'amex'},
+  streaming: {card:'Amex Blue Cash Preferred', issuer:'amex'},
+  general: {card:'Citizens Reserve Summit', issuer:'citizens'}
+};
+
+function showResult(key){
+  const info = bestCardMap[key];
+  if(!info) return;
+  const card = info.card;
+  const data = cards[card];
+  document.getElementById('topBar').style.background = data.color;
+  document.getElementById('resultCard').innerText = card;
+  document.getElementById('resultText').innerText = data.text;
+  document.getElementById('categoryView').style.display='none';
+  document.getElementById('resultView').style.display='block';
+  document.getElementById('resultView').setAttribute('aria-hidden','false');
+}
+
+document.querySelectorAll('.card').forEach(c => {
+  c.addEventListener('click', (e) => {
+    const k = c.getAttribute('data-key');
+    if(k === 'other'){
+      showAllCards();
+      return;
+    }
+    showResult(k);
+  });
+});
+
+document.getElementById('backBtn').addEventListener('click', ()=>{
+  document.getElementById('resultView').style.display='none';
+  document.getElementById('categoryView').style.display='grid';
+});
+
+function showAllCards(){
+  const all = document.getElementById('allCards');
+  all.style.display='block';
+  all.innerHTML = '';
+  for(const [name, info] of Object.entries(cards)){
+    const el = document.createElement('div');
+    el.style.border='1px solid #eee';
+    el.style.padding='12px';
+    el.style.margin='8px 0';
+    el.style.borderRadius='10px';
+    el.innerHTML = `<div style="height:8px;border-radius:8px;background:${info.color};margin:-12px -12px 8px -12px"></div><div style="font-weight:700">${name}</div><div style="color:#444">${info.text}</div>`;
+    all.appendChild(el);
+  }
+  // show category view hidden to avoid overlap
+  document.getElementById('categoryView').style.display='none';
+  document.getElementById('resultView').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Register service worker for offline caching (best-effort)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
