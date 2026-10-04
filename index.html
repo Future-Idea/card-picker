@@ -5,126 +5,345 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Card Picker</title>
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Card Picker">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
 <style>
 :root{
-  --bg:#ffffff; --text:#111; --card-radius:12px;
-  --accent-amex: #097dc8; --accent-citi: #d4af37; --accent-citizens: #228b22; --accent-schwab: #787878;
+  --bg:#ffffff; --text:#111111; --muted:#666666; --line:#eeeeee;
+  --sheet:#ffffff; --input:#f2f2f4; --tabbar:#ffffff;
+  --accent-amex:#097dc8; --accent-citi:#b8860b; --accent-citizens:#228b22;
+  --accent-paypal:#6a0dad; --accent-rbc:#c8102e; --accent-schwab:#787878;
+  --radius:14px;
 }
-*{box-sizing:border-box}
-body{margin:0;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;}
-header{padding:18px 16px; text-align:center; font-weight:600; font-size:18px; border-bottom:1px solid #eee}
-.container{padding:14px;}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.card{background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.03);}
-.card-icon{font-size:30px;margin-bottom:8px}
-.result-view{display:none;padding:16px;margin:12px;border-radius:12px;background:#fff;border:1px solid #eee;box-shadow:0 4px 16px rgba(0,0,0,0.04)}
-.top-bar{height:6px;border-radius:6px 6px 0 0;margin:-16px -16px 12px -16px}
-.result-title{font-weight:700;font-size:16px;margin-bottom:6px}
-.result-sub{color:#444}
-.btn{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:10px;background:#007aff;color:#fff;border:none;font-weight:600}
-.small{font-size:13px;color:#666;margin-top:8px}
-.footer{padding:18px;text-align:center;color:#888;font-size:13px}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b0b0d; --text:#f2f2f2; --muted:#a1a1a6; --line:#2a2a2e;
+    --sheet:#161618; --input:#1c1c1f; --tabbar:#101012;
+  }
+  meta[name="theme-color"]{content:"#0b0b0d"}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+header{position:sticky;top:0;z-index:10;background:var(--bg);
+  padding:calc(14px + env(safe-area-inset-top)) 16px 12px;text-align:center;
+  font-weight:700;font-size:18px;border-bottom:1px solid var(--line)}
+main{padding:12px 14px 20px;max-width:640px;margin:0 auto}
+#banner{display:none;margin:2px 0 12px;padding:12px 14px;border-radius:var(--radius);
+  background:#fff8e1;color:#5d4a00;border:1px solid #f0dfa8;font-size:14px}
+@media (prefers-color-scheme: dark){#banner{background:#2a230f;color:#f5d76e;border-color:#4a3f16}}
+#banner button{float:right;border:none;background:none;font-size:16px;color:inherit;cursor:pointer;padding:0 0 8px 8px}
+#search{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--input);color:var(--text);font-size:16px;margin-bottom:12px;outline:none}
+#search:focus{border-color:var(--accent-amex)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 10px;text-align:center;cursor:pointer;transition:transform .08s ease}
+.tile:active{transform:scale(.96)}
+.tile .ico{font-size:30px;margin-bottom:8px}
+.tile .lbl{font-size:14px;font-weight:600}
+.tile .sub{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.3}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:24px;font-size:14px}
+/* bottom sheet */
+#backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40}
+#sheet{display:none;position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:640px;margin:0 auto;
+  background:var(--sheet);border-radius:20px 20px 0 0;padding:10px 18px calc(20px + env(safe-area-inset-bottom));
+  box-shadow:0 -8px 30px rgba(0,0,0,.18);max-height:82vh;overflow-y:auto}
+#sheet.open,#backdrop.open{display:block;animation:slideup .22s ease}
+@keyframes slideup{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 12px}
+.pick{border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.pick::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:var(--pc,#888)}
+.pick .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--muted);margin-bottom:6px}
+.pick.primary{border-width:2px}
+.pick .name{font-weight:700;font-size:17px;margin-bottom:4px}
+.pick .why{font-size:14px;color:var(--muted);line-height:1.45}
+.pick .note{font-size:13px;margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--input);line-height:1.4}
+#sheetClose{display:block;width:100%;margin-top:6px;padding:13px;border-radius:12px;border:none;
+  background:#007aff;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+/* wallet list */
+.wcard{border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.wcard::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:var(--pc,#888)}
+.wcard .name{font-weight:700;font-size:15px}
+.wcard .why{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.45}
+.badge{display:inline-block;font-size:11px;font-weight:700;background:#e8f0fe;color:#1a56db;
+  border-radius:20px;padding:3px 10px;margin-left:8px;vertical-align:1px}
+@media (prefers-color-scheme: dark){.badge{background:#1e2c52;color:#9db9ff}}
+/* plan checklist */
+.plan-item{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);
+  border-radius:var(--radius);padding:14px;margin-bottom:10px;cursor:pointer}
+.plan-item input{width:22px;height:22px;margin-top:2px;accent-color:#007aff;flex-shrink:0}
+.plan-item .t{font-weight:600;font-size:15px}
+.plan-item .d{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45}
+.plan-item.done .t{text-decoration:line-through;color:var(--muted)}
+/* tab bar */
+#tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--tabbar);
+  border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+#tabbar button{flex:1;border:none;background:none;color:var(--muted);font-size:11px;font-weight:600;
+  padding:10px 0 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+#tabbar button .ti{font-size:22px}
+#tabbar button.active{color:#007aff}
+.view{display:none}.view.active{display:block}
+.footer{padding:16px;text-align:center;color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
 <header>Card Picker</header>
-<div class="container">
-  <div id="categoryView" class="grid" aria-hidden="false">
-    <div class="card" data-key="groceries"><div class="card-icon">🛒</div><div>Groceries</div></div>
-    <div class="card" data-key="dining"><div class="card-icon">🍽</div><div>Dining</div></div>
-    <div class="card" data-key="travel"><div class="card-icon">✈️</div><div>Travel</div></div>
-    <div class="card" data-key="gas"><div class="card-icon">⛽️</div><div>Gas / Transit</div></div>
-    <div class="card" data-key="online"><div class="card-icon">💻</div><div>Online Shopping</div></div>
-    <div class="card" data-key="streaming"><div class="card-icon">🎬</div><div>Streaming</div></div>
-    <div class="card" data-key="general"><div class="card-icon">💳</div><div>General</div></div>
-    <div class="card" data-key="other"><div class="card-icon">⭐</div><div>All Cards</div></div>
-  </div>
 
-  <div id="resultView" class="result-view" aria-hidden="true">
-    <div id="topBar" class="top-bar" style="background:var(--accent-amex)"></div>
-    <div class="result-title" id="resultCard">Amex Blue Cash Preferred</div>
-    <div class="result-sub" id="resultText">6% back on U.S. supermarkets</div>
-    <div class="small">Tap a category to see best card. Add to Home Screen: Share → Add to Home Screen (Safari).</div>
-    <div style="text-align:center"><button id="backBtn" class="btn">Back</button></div>
-  </div>
+<main>
+  <div id="banner" role="alert"></div>
 
-  <div id="allCards" style="display:none;margin-top:12px"></div>
+  <section id="view-pick" class="view active">
+    <input id="search" type="search" placeholder="Try &quot;chipotle&quot;, &quot;costco&quot;, &quot;lyft&quot;…" autocomplete="off">
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <section id="view-wallet" class="view">
+    <div id="walletList"></div>
+  </section>
+
+  <section id="view-plan" class="view">
+    <div id="planList"></div>
+    <div class="footer">Checklist is stored on this device only.</div>
+  </section>
+
+  <div class="footer">Offline-capable PWA · v2</div>
+</main>
+
+<div id="backdrop"></div>
+<div id="sheet" role="dialog" aria-modal="true">
+  <div class="grab"></div>
+  <div id="sheetBody"></div>
+  <button id="sheetClose">Done</button>
 </div>
-<div class="footer">Minimalist, offline-capable. Icons and colors match issuers.</div>
+
+<nav id="tabbar">
+  <button data-tab="pick" class="active"><span class="ti">💳</span>Pick</button>
+  <button data-tab="wallet"><span class="ti">👛</span>Wallet</button>
+  <button data-tab="plan"><span class="ti">✅</span>Plan</button>
+</nav>
 
 <script>
-const cards = {
-  "Amex Blue Cash Preferred": { issuer:'amex', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-amex'), text:'6% back on U.S. supermarkets' },
-  "Amex Blue Cash Everyday": { issuer:'amex', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-amex'), text:'3% back on groceries, gas, online retail' },
-  "Citizens Reserve Summit": { issuer:'citizens', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-citizens'), text:'~3% back on dining & travel' },
-  "Citi Strata Premiere": { issuer:'citi', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-citi'), text:'3x points on travel, gas, dining, supermarkets' },
-  "PayPal Debit Card": { issuer:'paypal', color:'#6a0dad', text:'1% cashback via PayPal balance' },
-  "RBC Bank U.S. Visa": { issuer:'rbc', color:'#c81216', text:'1–2% general cashback' },
-  "Charles Schwab Debit Card": { issuer:'schwab', color:getComputedStyle(document.documentElement).getPropertyValue('--accent-schwab'), text:'No foreign transaction fees (debit)' }
+"use strict";
+/* ---------- data ---------- */
+const CARDS = {
+  paypal:   { name:"PayPal Debit Card",        color:"#6a0dad", blurb:"5% back on one chosen category (up to $1,000/mo). Re-pick the category every month." },
+  bcp:      { name:"Amex Blue Cash Preferred", color:"#097dc8", blurb:"6% back on U.S. supermarkets & streaming (up to $6k/yr each)." },
+  bce:      { name:"Amex Blue Cash Everyday",  color:"#2f9be8", blurb:"3% back on U.S. supermarkets, gas & online retail (up to $6k/yr each). No annual fee." },
+  strata:   { name:"Citi Strata Premier",      color:"#b8860b", blurb:"3x ThankYou points on travel, dining, gas & groceries. 10x via Citi Travel. +24-month extended warranty — best in class." },
+  summit:   { name:"Citizens Summit Reserve",  color:"#228b22", blurb:"3% back on dining, groceries & entertainment; 1.5% back on everything else. $10/mo Lyft credit, Priority Pass lounges, no foreign transaction fees." },
+  rbc:      { name:"RBC Bank Visa",            color:"#c8102e", blurb:"Your Costco card — Visa is the only credit card Costco warehouses accept." },
+  schwab:   { name:"Schwab Debit Card",        color:"#787878", blurb:"No foreign transaction fees, ATM fee rebates worldwide. Good for travel cash." },
+  dblcash:  { name:"Citi Double Cash",         color:"#8a6d1b", blurb:"2% back on everything (1% + 1%). Points pool with Strata Premier.", soon:"After the car purchase" },
+  prime:    { name:"Amazon Prime Visa",        color:"#ff9900", blurb:"5% back at Amazon.com & Whole Foods. Only worth it if your Amazon volume is high — your Everyday already gets 3% there.", soon:"Optional" }
 };
 
-const bestCardMap = {
-  groceries: {card:'Amex Blue Cash Preferred', issuer:'amex'},
-  dining: {card:'Citizens Reserve Summit', issuer:'citizens'},
-  travel: {card:'Citi Strata Premiere', issuer:'citi'},
-  gas: {card:'Amex Blue Cash Everyday', issuer:'amex'},
-  online: {card:'Amex Blue Cash Everyday', issuer:'amex'},
-  streaming: {card:'Amex Blue Cash Preferred', issuer:'amex'},
-  general: {card:'Citizens Reserve Summit', issuer:'citizens'}
+const CATEGORIES = [
+  { key:"groceries", icon:"🛒", label:"Groceries",
+    keywords:["whole foods","trader joe","grocery","supermarket","foodtown","key food","aldi","wegmans"],
+    primary:{ card:"bcp", why:"6% back on U.S. supermarkets (up to $6k/yr)" },
+    backup:{ card:"bce", why:"3% back on U.S. supermarkets" },
+    note:"Stacks with your 20% Whole Foods employee discount — rewards are earned on the discounted total." },
+  { key:"dining", icon:"🍽️", label:"Dining",
+    keywords:["restaurant","chipotle","mcdonald","dinner","lunch","cafe","pizza","sushi","taco","dining"],
+    primary:{ card:"paypal", why:"5% back on restaurants (up to $1,000/mo)" },
+    backup:{ card:"strata", why:"3x ThankYou points on restaurants" },
+    note:"Re-pick the PayPal category every month. Past the $1,000 cap? Use the Strata Premier." },
+  { key:"travel", icon:"✈️", label:"Travel",
+    keywords:["flight","hotel","airbnb","rental car","avis","expedia","travel","vacation","booking"],
+    primary:{ card:"strata", why:"3x points on airfare & hotels, 10x via Citi Travel portal" },
+    backup:{ card:"summit", why:"1.5% back, no foreign transaction fees, lounge access" },
+    note:"$100 annual hotel credit on stays of $500+ booked through Citi Travel." },
+  { key:"gas", icon:"⛽", label:"Gas",
+    keywords:["gas","fuel","shell","chevron","exxon","bp ","gas station"],
+    primary:{ card:"strata", why:"3x ThankYou points on gas & EV charging" },
+    backup:{ card:"bce", why:"3% back at U.S. gas stations" },
+    note:"" },
+  { key:"online", icon:"💻", label:"Online shopping",
+    keywords:["walmart","target","best buy","home depot","online","website","shopping"],
+    primary:{ card:"bce", why:"3% back on U.S. online retail (up to $6k/yr)" },
+    backup:{ card:"summit", why:"1.5% back on everything else" },
+    note:"" },
+  { key:"amazon", icon:"📦", label:"Amazon",
+    keywords:["amazon"],
+    primary:{ card:"bce", why:"3% back — Amazon.com counts as U.S. online retail" },
+    backup:{ card:"summit", why:"1.5% back on everything else" },
+    note:"Stacks with your 10% employee discount on household essentials. Prime Visa (5%) only wins if your Amazon volume is high." },
+  { key:"streaming", icon:"🎬", label:"Streaming",
+    keywords:["netflix","spotify","hulu","disney","streaming","subscription"],
+    primary:{ card:"bcp", why:"6% back on streaming services" },
+    backup:{ card:"summit", why:"3% back on entertainment" },
+    note:"" },
+  { key:"costco", icon:"🏬", label:"Costco (in-store)",
+    keywords:["costco"],
+    primary:{ card:"rbc", why:"Visa is the only credit card Costco warehouses accept" },
+    backup:{ card:"schwab", why:"Debit cards work too — PIN debit accepted" },
+    note:"For Costco.com (which takes any card), use Summit Reserve 1.5% — or Double Cash 2% once you have it." },
+  { key:"rideshare", icon:"🚗", label:"Rideshare",
+    keywords:["lyft","uber","taxi","rideshare"],
+    primary:{ card:"summit", why:"1.5% back + $10/month Lyft credit (spend $25+/mo)" },
+    backup:{ card:"bcp", why:"3% back on transit including rideshares" },
+    note:"" },
+  { key:"appliances", icon:"📺", label:"Appliances & electronics",
+    keywords:["appliance","tv","laptop","electronics","best buy","fridge","washer"],
+    primary:{ card:"strata", why:"Extends the manufacturer warranty by 24 months (up to $10k/item) — best in the industry" },
+    backup:{ card:"summit", why:"1.5% back — but the warranty only applies when you pay with the Strata" },
+    note:"Always put big purchases on the Strata Premier, even though it only earns 1x here. The protection is worth more than the points." },
+  { key:"insurance", icon:"🛡️", label:"Insurance",
+    keywords:["insurance","geico","premium"],
+    primary:{ card:"summit", why:"1.5% back — insurance earns no bonus anywhere" },
+    backup:{ card:"dblcash", why:"2% back on everything" },
+    note:"Pay the full 6-month term upfront to avoid installment fees — that saves more than any card choice." },
+  { key:"general", icon:"💳", label:"Everything else",
+    keywords:["general","other","default"],
+    primary:{ card:"summit", why:"1.5% back on everything else" },
+    backup:{ card:"dblcash", why:"2% back on everything" },
+    note:"" }
+];
+
+const PLAN = [
+  { id:"paypal-monthly", t:"Pick your PayPal 5% category", d:"Do this on the 1st of every month in the PayPal app — it does not auto-renew. Currently set to: restaurants." },
+  { id:"doublecash", t:"Apply for the Citi Double Cash", d:"After the car purchase/loan funds — protect your 794 credit score until then." },
+  { id:"bcp-review", t:"Review the Blue Cash Preferred fee", d:"After 1–2 months of Whole Foods volume: keep it if groceries clear ~$265/mo, otherwise downgrade to the Everyday." },
+  { id:"lyft", t:"Move Lyft spending to Summit Reserve", d:"Spend $25+/mo on Lyft with the Summit Reserve to trigger the $10/month statement credit." }
+];
+
+/* ---------- helpers ---------- */
+const $ = (s) => document.querySelector(s);
+const monthKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); };
+const store = {
+  get(k, fb){ try{ const v = localStorage.getItem(k); return v === null ? fb : JSON.parse(v); }catch(e){ return fb; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
 
-function showResult(key){
-  const info = bestCardMap[key];
-  if(!info) return;
-  const card = info.card;
-  const data = cards[card];
-  document.getElementById('topBar').style.background = data.color;
-  document.getElementById('resultCard').innerText = card;
-  document.getElementById('resultText').innerText = data.text;
-  document.getElementById('categoryView').style.display='none';
-  document.getElementById('resultView').style.display='block';
-  document.getElementById('resultView').setAttribute('aria-hidden','false');
+/* ---------- pick view ---------- */
+function cardLine(ref, tag){
+  const c = CARDS[ref.card];
+  const soon = c.soon ? `<span class="badge">Coming soon</span>` : "";
+  return `<div class="pick${tag==="Primary"?" primary":""}" style="--pc:${c.color}">
+    <div class="tag">${tag}${soon}</div>
+    <div class="name">${c.name}</div>
+    <div class="why">${ref.why}</div>
+  </div>`;
 }
 
-document.querySelectorAll('.card').forEach(c => {
-  c.addEventListener('click', (e) => {
-    const k = c.getAttribute('data-key');
-    if(k === 'other'){
-      showAllCards();
-      return;
-    }
-    showResult(k);
+function openCategory(cat){
+  const body = $("#sheetBody");
+  body.innerHTML =
+    `<div style="font-size:13px;color:var(--muted);margin-bottom:10px">${cat.icon} ${cat.label}</div>` +
+    cardLine(cat.primary, "Primary") +
+    cardLine(cat.backup, "Backup") +
+    (cat.note ? `<div class="pick" style="--pc:transparent"><div class="note" style="margin:0">💡 ${cat.note}</div></div>` : "");
+  $("#backdrop").classList.add("open");
+  $("#sheet").classList.add("open");
+}
+function closeSheet(){
+  $("#backdrop").classList.remove("open");
+  $("#sheet").classList.remove("open");
+}
+$("#sheetClose").addEventListener("click", closeSheet);
+$("#backdrop").addEventListener("click", closeSheet);
+
+function renderGrid(filter){
+  const grid = $("#grid");
+  grid.innerHTML = "";
+  const q = (filter || "").trim().toLowerCase();
+  const list = CATEGORIES.filter(c => {
+    if(!q) return true;
+    return c.label.toLowerCase().includes(q) || c.keywords.some(k => k.includes(q) || q.includes(k));
+  });
+  if(!list.length){
+    grid.innerHTML = `<div class="empty">No match — try "dining", "costco", "gas"…</div>`;
+    return;
+  }
+  for(const c of list){
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.innerHTML = `<div class="ico">${c.icon}</div><div class="lbl">${c.label}</div>
+      <div class="sub">${CARDS[c.primary.card].name}</div>`;
+    el.addEventListener("click", () => openCategory(c));
+    grid.appendChild(el);
+  }
+}
+$("#search").addEventListener("input", (e) => renderGrid(e.target.value));
+
+/* ---------- wallet view ---------- */
+function renderWallet(){
+  const wl = $("#walletList");
+  wl.innerHTML = "";
+  for(const [key, c] of Object.entries(CARDS)){
+    const el = document.createElement("div");
+    el.className = "wcard";
+    el.style.setProperty("--pc", c.color);
+    el.innerHTML = `<div class="name">${c.name}${c.soon ? `<span class="badge">${c.soon}</span>` : ""}</div>
+      <div class="why">${c.blurb}</div>`;
+    wl.appendChild(el);
+  }
+}
+
+/* ---------- plan view ---------- */
+function renderPlan(){
+  const pl = $("#planList");
+  pl.innerHTML = "";
+  const done = store.get("plan-done", {});
+  for(const p of PLAN){
+    const el = document.createElement("div");
+    el.className = "plan-item" + (done[p.id] ? " done" : "");
+    el.innerHTML = `<input type="checkbox" ${done[p.id] ? "checked" : ""} aria-label="${p.t}">
+      <div><div class="t">${p.t}</div><div class="d">${p.d}</div></div>`;
+    el.addEventListener("click", (e) => {
+      if(e.target.tagName !== "INPUT"){
+        const cb = el.querySelector("input");
+        cb.checked = !cb.checked;
+      }
+      const cb = el.querySelector("input");
+      const d = store.get("plan-done", {});
+      d[p.id] = cb.checked;
+      store.set("plan-done", d);
+      el.classList.toggle("done", cb.checked);
+    });
+    pl.appendChild(el);
+  }
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("#tabbar button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#tabbar button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    $("#view-" + b.dataset.tab).classList.add("active");
+    window.scrollTo({ top: 0 });
   });
 });
 
-document.getElementById('backBtn').addEventListener('click', ()=>{
-  document.getElementById('resultView').style.display='none';
-  document.getElementById('categoryView').style.display='grid';
-});
+/* ---------- monthly PayPal banner ---------- */
+(function paypalBanner(){
+  const dismissed = store.get("paypal-banner", null);
+  if(dismissed === monthKey()) return;
+  const b = $("#banner");
+  b.innerHTML = `<button aria-label="Dismiss">✕</button>
+    💡 New month — have you picked your <b>PayPal 5% category</b> yet? It doesn't auto-renew.`;
+  b.style.display = "block";
+  b.querySelector("button").addEventListener("click", () => {
+    store.set("paypal-banner", monthKey());
+    b.style.display = "none";
+  });
+})();
 
-function showAllCards(){
-  const all = document.getElementById('allCards');
-  all.style.display='block';
-  all.innerHTML = '';
-  for(const [name, info] of Object.entries(cards)){
-    const el = document.createElement('div');
-    el.style.border='1px solid #eee';
-    el.style.padding='12px';
-    el.style.margin='8px 0';
-    el.style.borderRadius='10px';
-    el.innerHTML = `<div style="height:8px;border-radius:8px;background:${info.color};margin:-12px -12px 8px -12px"></div><div style="font-weight:700">${name}</div><div style="color:#444">${info.text}</div>`;
-    all.appendChild(el);
-  }
-  // show category view hidden to avoid overlap
-  document.getElementById('categoryView').style.display='none';
-  document.getElementById('resultView').style.display='none';
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-// Register service worker for offline caching (best-effort)
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
-}
+/* ---------- init ---------- */
+renderGrid("");
+renderWallet();
+renderPlan();
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 </script>
 </body>
 </html>
