@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content" />
 <title>Card Picker</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -14,6 +14,7 @@
 <meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
 <style>
 :root{
+  --tabbar-h:calc(62px + env(safe-area-inset-bottom));
   --bg:#ffffff; --text:#111111; --muted:#666666; --line:#eeeeee;
   --sheet:#ffffff; --input:#f2f2f4; --tabbar:#ffffff;
   --accent-amex:#097dc8; --accent-citi:#b8860b; --accent-citizens:#228b22;
@@ -28,10 +29,10 @@
   meta[name="theme-color"]{content:"#0b0b0d"}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+html{height:100%}
+body{min-height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
-  padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+  padding-bottom:calc(var(--tabbar-h) + 14px);}
 header{position:sticky;top:0;z-index:10;background:var(--bg);
   padding:calc(14px + env(safe-area-inset-top)) 16px 12px;text-align:center;
   font-weight:700;font-size:18px;border-bottom:1px solid var(--line)}
@@ -86,7 +87,8 @@ main{padding:12px 14px 20px;max-width:640px;margin:0 auto}
 .plan-item.done .t{text-decoration:line-through;color:var(--muted)}
 /* tab bar */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--tabbar);
-  border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+  border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);
+  -webkit-transform:translateZ(0);transform:translateZ(0);}
 #tabbar button{flex:1;border:none;background:none;color:var(--muted);font-size:11px;font-weight:600;
   padding:10px 0 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
 #tabbar button .ti{font-size:22px}
@@ -146,39 +148,43 @@ const CARDS = {
   prime:    { name:"Amazon Prime Visa",        color:"#ff9900", blurb:"5% back at Amazon.com & Whole Foods. Only worth it if your Amazon volume is high — your Everyday already gets 3% there.", soon:"Optional" }
 };
 
-const CATEGORIES = [
-  { key:"groceries", icon:"🛒", label:"Groceries",
-    keywords:["whole foods","trader joe","grocery","supermarket","foodtown","key food","aldi","wegmans"],
+const CATEGORIES = [{ key:"groceries", icon:"🛒", label:"Groceries",
+    keywords:["whole foods","trader joe","grocery","supermarket","foodtown","key food","aldi","wegmans","fulton market","patel brothers","brezelk","carrefou","ciacco"],
     primary:{ card:"bcp", why:"6% back on U.S. supermarkets (up to $6k/yr)" },
     backup:{ card:"bce", why:"3% back on U.S. supermarkets" },
     note:"Stacks with your 20% Whole Foods employee discount — rewards are earned on the discounted total." },
   { key:"dining", icon:"🍽️", label:"Dining",
-    keywords:["restaurant","chipotle","mcdonald","dinner","lunch","cafe","pizza","sushi","taco","dining"],
+    keywords:["restaurant","chipotle","mcdonald","dinner","lunch","cafe","coffee","pizza","sushi","taco","dining","gelato","bakery","deli","bistro","tavern","grill","bar","kitchen","teriyaki","thai","noodle","burger","sandwich","ice cream","juice","breakfast","brunch","pancake","seafood","ristorante","osteria","trattoria","pizzeria","omar","baazi","dhaba","turmeric","mikado","chutneys","lupo","sapporo","impeckable","aamrai","naan","banaras","farzi","poseidon","zaza","mercury","alligator","yellow deli","patiala","lahori","raja sweets","tap","calliope","venchi","cannareggio","marina","oniga","iuemi","nani","bspdv","autogrill","jamba","whistlepunk","lartigiano","chace","guadalajara","queenstown","tai fung","joey","curry nation","halal","furlanetto","cremeria","exytus","terrazze","torre","bulian","dogana"],
     primary:{ card:"paypal", why:"5% back on restaurants (up to $1,000/mo)" },
     backup:{ card:"strata", why:"3x ThankYou points on restaurants" },
     note:"Re-pick the PayPal category every month. Past the $1,000 cap? Use the Strata Premier." },
   { key:"travel", icon:"✈️", label:"Travel",
-    keywords:["flight","hotel","airbnb","rental car","avis","expedia","travel","vacation","booking"],
+    keywords:["flight","hotel","airbnb","rental car","avis","expedia","travel","vacation","booking","enterprise","hilton","hyatt","marriott","motel","resort","lodging","airline","delta","united","citi travel","vrbo","embassy"],
     primary:{ card:"strata", why:"3x points on airfare & hotels, 10x via Citi Travel portal" },
     backup:{ card:"summit", why:"1.5% back, no foreign transaction fees, lounge access" },
     note:"$100 annual hotel credit on stays of $500+ booked through Citi Travel." },
   { key:"gas", icon:"⛽", label:"Gas",
-    keywords:["gas","fuel","shell","chevron","exxon","bp ","gas station"],
+    keywords:["gas","fuel","shell","chevron","exxon","bp ","gas station","arco","sunoco","mobil","speedway","wawa"],
     primary:{ card:"strata", why:"3x ThankYou points on gas & EV charging" },
     backup:{ card:"bce", why:"3% back at U.S. gas stations" },
     note:"" },
+  { key:"appliances", icon:"📺", label:"Appliances & electronics",
+    keywords:["appliance","tv","laptop","electronics","best buy","fridge","washer","apple store","b&h","micro center"],
+    primary:{ card:"strata", why:"Extends the manufacturer warranty by 24 months (up to $10k/item) — best in the industry" },
+    backup:{ card:"summit", why:"1.5% back — but the warranty only applies when you pay with the Strata" },
+    note:"Always put big purchases on the Strata Premier, even though it only earns 1x here. The protection is worth more than the points." },
   { key:"online", icon:"💻", label:"Online shopping",
-    keywords:["walmart","target","best buy","home depot","online","website","shopping"],
+    keywords:["walmart","target","best buy","home depot","online","website","shopping","lowes","ikea","etsy"],
     primary:{ card:"bce", why:"3% back on U.S. online retail (up to $6k/yr)" },
     backup:{ card:"summit", why:"1.5% back on everything else" },
     note:"" },
   { key:"amazon", icon:"📦", label:"Amazon",
-    keywords:["amazon"],
+    keywords:["amazon","prime","fresh"],
     primary:{ card:"bce", why:"3% back — Amazon.com counts as U.S. online retail" },
     backup:{ card:"summit", why:"1.5% back on everything else" },
     note:"Stacks with your 10% employee discount on household essentials. Prime Visa (5%) only wins if your Amazon volume is high." },
   { key:"streaming", icon:"🎬", label:"Streaming",
-    keywords:["netflix","spotify","hulu","disney","streaming","subscription"],
+    keywords:["netflix","spotify","hulu","disney","streaming","subscription","peacock","youtube","apple music","hbo","paramount"],
     primary:{ card:"bcp", why:"6% back on streaming services" },
     backup:{ card:"summit", why:"3% back on entertainment" },
     note:"" },
@@ -188,22 +194,17 @@ const CATEGORIES = [
     backup:{ card:"schwab", why:"Debit cards work too — PIN debit accepted" },
     note:"For Costco.com (which takes any card), use Summit Reserve 1.5% — or Double Cash 2% once you have it." },
   { key:"rideshare", icon:"🚗", label:"Rideshare",
-    keywords:["lyft","uber","taxi","rideshare"],
+    keywords:["lyft","uber","taxi","rideshare","lime","revel"],
     primary:{ card:"summit", why:"1.5% back + $10/month Lyft credit (spend $25+/mo)" },
     backup:{ card:"bcp", why:"3% back on transit including rideshares" },
     note:"" },
-  { key:"appliances", icon:"📺", label:"Appliances & electronics",
-    keywords:["appliance","tv","laptop","electronics","best buy","fridge","washer"],
-    primary:{ card:"strata", why:"Extends the manufacturer warranty by 24 months (up to $10k/item) — best in the industry" },
-    backup:{ card:"summit", why:"1.5% back — but the warranty only applies when you pay with the Strata" },
-    note:"Always put big purchases on the Strata Premier, even though it only earns 1x here. The protection is worth more than the points." },
   { key:"insurance", icon:"🛡️", label:"Insurance",
-    keywords:["insurance","geico","premium"],
+    keywords:["insurance","geico","progressive","state farm","allstate","usaa","liberty mutual"],
     primary:{ card:"summit", why:"1.5% back — insurance earns no bonus anywhere" },
     backup:{ card:"dblcash", why:"2% back on everything" },
     note:"Pay the full 6-month term upfront to avoid installment fees — that saves more than any card choice." },
   { key:"general", icon:"💳", label:"Everything else",
-    keywords:["general","other","default"],
+    keywords:["general","other","default","cvs","walgreens","duane reade","rite aid","pharmacy","drugstore","tj maxx","tjmaxx","burlington","marshalls","ross","7-eleven","parking","ace parking","laz parking","interpark","paybyphone","post office","usps","aaa","spectrum","vodafone","gift","souvenir","convenience","mercantile","u7buy"],
     primary:{ card:"summit", why:"1.5% back on everything else" },
     backup:{ card:"dblcash", why:"2% back on everything" },
     note:"" }
@@ -261,7 +262,15 @@ function renderGrid(filter){
     return c.label.toLowerCase().includes(q) || c.keywords.some(k => k.includes(q) || q.includes(k));
   });
   if(!list.length){
-    grid.innerHTML = `<div class="empty">No match — try "dining", "costco", "gas"…</div>`;
+    grid.innerHTML = "";
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.style.gridColumn = "1/-1";
+    el.innerHTML = `<div class="ico">❓</div><div class="lbl">No specific match</div><div class="sub">Use your general card</div>`;
+    el.addEventListener("click", () => openCategory(
+      Object.assign({}, CATEGORIES.find(c => c.key === "general"),
+        { note:"No category matched — the general card is the safe pick." }), true));
+    grid.appendChild(el);
     return;
   }
   for(const c of list){
