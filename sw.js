@@ -1,4 +1,4 @@
-const CACHE_NAME = 'card-picker-v2';
+const CACHE_NAME = 'card-picker-v4';
 const FILES_TO_CACHE = ['index.html', 'manifest.json', 'icon-180.png', 'icon-512.png'];
 self.addEventListener('install', (evt) => {
   evt.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE)));
